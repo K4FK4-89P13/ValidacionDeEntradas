@@ -8,7 +8,7 @@
     $precio_sin_igv = isset($_POST['precio_sin_igv']) ? $_POST['precio_sin_igv'] : 0;
     $igv = $precio_sin_igv * 0.18; // Cálculo del IGV (18%)
     $precio_a_pagar = $precio_sin_igv + $igv; // Precio total con IGV
-    $descuento = 10; // Ajustar el descuento según la lógica
+    $descuento = 10; // Ajustar el descuento
 ?>
 
 <!DOCTYPE html>
@@ -16,7 +16,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro cliente Dinamico</title>
+    <title>Formulario Dinámico con Búsqueda de DNI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -64,6 +64,7 @@
                     <input class="form-control" type="text" id="dni" placeholder="Ingrese DNI" pattern="\d{8}" disabled>
                     <div class="invalid-feedback">El DNI debe tener 8 dígitos.</div>
                 </div>
+                <div id="dni-message" class="text-muted"></div> <!-- Mensaje de éxito u error -->
             </div>
 
             <!-- Datos calculados en PHP -->
@@ -90,24 +91,20 @@
     </div>
 
     <script>
-
-        /*
         // Habilitar el checkbox "Quiero ser cliente recurrente" y el formulario adicional
-        */
         const precioSinIgv = <?= $precio_sin_igv ?>;
         const referencial = <?= $referencial ?>;
         const clienteRecurrenteCheckbox = document.getElementById('cliente_recurrente');
         const formularioAdicional = document.getElementById('formulario_adicional');
         const soyClienteRecurrenteCheckbox = document.getElementById('soy_cliente_recurrente');
         const dniInput = document.getElementById('dni');
+        const dniMessage = document.getElementById('dni-message');
 
         if (precioSinIgv > referencial) {
             clienteRecurrenteCheckbox.disabled = false;
         }
 
-        /*
         // Desmarcar un checkbox cuando se selecciona el otro
-        */
         clienteRecurrenteCheckbox.addEventListener('change', function () {
             if (this.checked) {
                 soyClienteRecurrenteCheckbox.checked = false;
@@ -125,6 +122,38 @@
                 dniInput.disabled = false;
             } else {
                 dniInput.disabled = true;
+            }
+        });
+
+        // Búsqueda de DNI a través de AJAX
+        dniInput.addEventListener('input', function () {
+            const dniValue = dniInput.value;
+
+            // Solo hacer la búsqueda si hay 8 dígitos
+            if (dniValue.length === 8) {
+                $.ajax({
+                    url: 'buscar_dni.php', // Archivo donde se hará la búsqueda
+                    type: 'POST',
+                    data: { dni: dniValue },
+                    success: function(response) {
+                        if (response === 'encontrado') {
+                            dniInput.classList.remove('is-invalid');
+                            dniInput.classList.add('is-valid');
+                            dniMessage.textContent = "DNI encontrado con éxito.";
+                            dniMessage.classList.add('text-success');
+                            dniMessage.classList.remove('text-danger');
+                        } else {
+                            dniInput.classList.remove('is-valid');
+                            dniInput.classList.add('is-invalid');
+                            dniMessage.textContent = "DNI no encontrado.";
+                            dniMessage.classList.add('text-danger');
+                            dniMessage.classList.remove('text-success');
+                        }
+                    }
+                });
+            } else {
+                dniInput.classList.remove('is-valid', 'is-invalid');
+                dniMessage.textContent = "";
             }
         });
     </script>
